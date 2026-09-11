@@ -24,24 +24,24 @@ services:
       - "traefik.docker.network=traefik_proxy"
   db:
     image: mariadb:10.11
-    container_name: ${DB_NAME:?DB_NAME is required}
+    container_name: orianasafaris_db
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
       MARIADB_DATABASE: ${DB_NAME:?DB_NAME is required}
       MARIADB_USER: ${DB_USER:?DB_USER is required}
       MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-    volumes: [${DB_NAME:?DB_NAME is required}_data:/var/lib/mysql]
+    volumes: [orianasafaris_db_data:/var/lib/mysql]
     networks: [site_network]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER:?DB_USER is required}", "-p${DB_PASSWORD:?DB_PASSWORD is required}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}\" || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 60s
 volumes:
   orianasafaris_data: {}
-  ${DB_NAME:?DB_NAME is required}_data: {}
+  orianasafaris_db_data: {}
 networks:
   site_network: {driver: bridge}
   proxy:
