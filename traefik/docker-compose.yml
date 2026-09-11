@@ -1,4 +1,3 @@
-version: "3.9"
 # Real Traefik proxy — handles routing for all 5 sites
 # Domain: manages SSL via Let's Encrypt (set your email in .env or edit command)
 # Must be deployed BEFORE any site containers

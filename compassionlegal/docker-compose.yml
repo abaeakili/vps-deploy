@@ -1,8 +1,7 @@
-version: "3.9"
 # Compassionlegal — WordPress
 # Source: C:\laragon\www\compassionlegal
 # Domain: compassionlegal.com.au
-# DB: compassionlegal_db / user / pass (replace with secure values)
+# DB: ${DB_NAME:?DB_NAME is required} / user / pass (replace with secure values)
 services:
   wordpress:
     image: wordpress:6.5-php8.3-apache
@@ -10,9 +9,9 @@ services:
     restart: unless-stopped
     environment:
       WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_USER: compassionlegal_user
-      WORDPRESS_DB_PASSWORD: compassionlegal_pass
-      WORDPRESS_DB_NAME: compassionlegal_db
+      WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      WORDPRESS_DB_NAME: ${DB_NAME:?DB_NAME is required}
     volumes:
       - compassionlegal_data:/var/www/html
     networks: [site_network, proxy]
@@ -25,24 +24,24 @@ services:
       - "traefik.docker.network=traefik_proxy"
   db:
     image: mariadb:10.11
-    container_name: compassionlegal_db
+    container_name: ${DB_NAME:?DB_NAME is required}
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: compassionlegal_root
-      MARIADB_DATABASE: compassionlegal_db
-      MARIADB_USER: compassionlegal_user
-      MARIADB_PASSWORD: compassionlegal_pass
-    volumes: [compassionlegal_db_data:/var/lib/mysql]
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+      MARIADB_DATABASE: ${DB_NAME:?DB_NAME is required}
+      MARIADB_USER: ${DB_USER:?DB_USER is required}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes: [${DB_NAME:?DB_NAME is required}_data:/var/lib/mysql]
     networks: [site_network]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "compassionlegal_user", "-pcompassionlegal_pass"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER:?DB_USER is required}", "-p${DB_PASSWORD:?DB_PASSWORD is required}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 60s
 volumes:
   compassionlegal_data: {}
-  compassionlegal_db_data: {}
+  ${DB_NAME:?DB_NAME is required}_data: {}
 networks:
   site_network: {driver: bridge}
   proxy:
