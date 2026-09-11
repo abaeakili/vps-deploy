@@ -1,0 +1,49 @@
+version: "3.9"
+# OmniApp — PHP / MySQL (subdomain: omniapp.findx.services)
+# Source: derived from mydunia.findx.services
+# Domain: omniapp.findx.services
+# DB: omniapp_db / root / pass (replace with secure values)
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: omniapp_php:8.2-apache
+    container_name: omniapp_app
+    restart: unless-stopped
+    expose: ["80"]
+    volumes:
+      - ./src:/var/www/html:rw
+    networks: [site_network, proxy]
+    depends_on: [mysql]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.omniapp.rule=Host(`omniapp.findx.services`)"
+      - "traefik.http.routers.omniapp.entrypoints=websecure"
+      - "traefik.http.routers.omniapp.tls.certresolver=letsencrypt"
+      - "traefik.http.services.omniapp.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_proxy"
+  mysql:
+    image: mariadb:10.11
+    container_name: omniapp_mysql
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: omniapp_root
+      MARIADB_DATABASE: omniapp_db
+      MARIADB_USER: omniapp_user
+      MARIADB_PASSWORD: omniapp_pass
+    volumes: [omniapp_mysql_data:/var/lib/mysql]
+    networks: [site_network]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "omniapp_user", "-pomniapp_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+volumes:
+  omniapp_mysql_data: {}
+networks:
+  site_network: {driver: bridge}
+  proxy:
+    external: true
+    name: traefik_proxy

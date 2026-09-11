@@ -1,0 +1,50 @@
+version: "3.9"
+# Orianasafaris — WordPress (with .daf backup restore capability)
+# Source: Google Drive .daf + installer.php
+# Domain: orianasafaris.com
+# DB: orianasafaris_db / user / pass (replace with secure values)
+services:
+  wordpress:
+    image: wordpress:6.5-php8.3-apache
+    container_name: wp_orianasafaris
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: orianasafaris_user
+      WORDPRESS_DB_PASSWORD: orianasafaris_pass
+      WORDPRESS_DB_NAME: orianasafaris_db
+    volumes:
+      - orianasafaris_data:/var/www/html
+    networks: [site_network, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.orianasafaris.rule=Host(`orianasafaris.com`)"
+      - "traefik.http.routers.orianasafaris.entrypoints=websecure"
+      - "traefik.http.routers.orianasafaris.tls.certresolver=letsencrypt"
+      - "traefik.http.services.orianasafaris.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_proxy"
+  db:
+    image: mariadb:10.11
+    container_name: orianasafaris_db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: orianasafaris_root
+      MARIADB_DATABASE: orianasafaris_db
+      MARIADB_USER: orianasafaris_user
+      MARIADB_PASSWORD: orianasafaris_pass
+    volumes: [orianasafaris_db_data:/var/lib/mysql]
+    networks: [site_network]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "orianasafaris_user", "-porianasafaris_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+volumes:
+  orianasafaris_data: {}
+  orianasafaris_db_data: {}
+networks:
+  site_network: {driver: bridge}
+  proxy:
+    external: true
+    name: traefik_proxy

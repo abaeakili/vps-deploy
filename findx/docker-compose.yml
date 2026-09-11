@@ -1,0 +1,50 @@
+version: "3.9"
+# Findx — WordPress
+# Source: C:\laragon\www\findx
+# Domain: findx.services
+# DB: findx_db / user / pass (replace with secure values)
+services:
+  wordpress:
+    image: wordpress:6.5-php8.3-apache
+    container_name: wp_findx
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: findx_user
+      WORDPRESS_DB_PASSWORD: findx_pass
+      WORDPRESS_DB_NAME: findx_db
+    volumes:
+      - findx_data:/var/www/html
+    networks: [site_network, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.findx.rule=Host(`findx.services`)"
+      - "traefik.http.routers.findx.entrypoints=websecure"
+      - "traefik.http.routers.findx.tls.certresolver=letsencrypt"
+      - "traefik.http.services.findx.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_proxy"
+  db:
+    image: mariadb:10.11
+    container_name: findx_db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: findx_root
+      MARIADB_DATABASE: findx_db
+      MARIADB_USER: findx_user
+      MARIADB_PASSWORD: findx_pass
+    volumes: [findx_db_data:/var/lib/mysql]
+    networks: [site_network]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "findx_user", "-pfindx_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+volumes:
+  findx_data: {}
+  findx_db_data: {}
+networks:
+  site_network: {driver: bridge}
+  proxy:
+    external: true
+    name: traefik_proxy

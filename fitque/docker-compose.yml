@@ -1,0 +1,50 @@
+version: "3.9"
+# Fitque — WordPress
+# Source: C:\laragon\www\fitque
+# Domain: fitque.co.ke
+# DB: fitque_db / user / pass (replace with secure values)
+services:
+  wordpress:
+    image: wordpress:6.5-php8.3-apache
+    container_name: wp_fitque
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: fitque_user
+      WORDPRESS_DB_PASSWORD: fitque_pass
+      WORDPRESS_DB_NAME: fitque_db
+    volumes:
+      - fitque_data:/var/www/html
+    networks: [site_network, proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fitque.rule=Host(`fitque.co.ke`)"
+      - "traefik.http.routers.fitque.entrypoints=websecure"
+      - "traefik.http.routers.fitque.tls.certresolver=letsencrypt"
+      - "traefik.http.services.fitque.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_proxy"
+  db:
+    image: mariadb:10.11
+    container_name: fitque_db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: fitque_root
+      MARIADB_DATABASE: fitque_db
+      MARIADB_USER: fitque_user
+      MARIADB_PASSWORD: fitque_pass
+    volumes: [fitque_db_data:/var/lib/mysql]
+    networks: [site_network]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "fitque_user", "-pfitque_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+volumes:
+  fitque_data: {}
+  fitque_db_data: {}
+networks:
+  site_network: {driver: bridge}
+  proxy:
+    external: true
+    name: traefik_proxy
